@@ -1,0 +1,44 @@
+---
+description: Hermes-Agent 个人 fork 与上游同步（更新代码、推送到 fork），无需用户每次说明
+alwaysApply: true
+---
+
+# Hermes-Agent：Git 远程与同步约定
+
+本仓库为 **zjy** 的工作副本：从官方同步，向个人 fork 推送。**用户说「更新代码」「拉代码」「同步」「推到 fork」等时，按下列约定执行，不要反问远程地址。**
+
+## 远程（已配置）
+
+| 名称 | 用途 | URL |
+|------|------|-----|
+| `upstream` | 官方 Hermes，仅拉取 | `https://github.com/NousResearch/hermes-agent.git` |
+| `origin` | 个人 fork，推送存档 | `https://github.com/zjy-starlight/hermes-agent-byzjy.git` |
+
+默认分支：`main`（跟踪 `origin/main`）。
+
+## 更新代码（对齐官方）
+
+在 `d:\Programs\Hermes-Agent` 下，**从 upstream 合并进当前分支**（Windows PowerShell 用分号串联命令）：
+
+```powershell
+Set-Location "d:\Programs\Hermes-Agent"
+git fetch upstream
+git merge upstream/main
+```
+
+若有本地未提交改动导致合并失败：先 `git stash push -m "WIP"`，合并后再 `git stash pop`，并处理冲突。
+
+## 推送到个人 fork
+
+合并/提交完成后，**推到 origin（不是 upstream）**：
+
+```powershell
+git push origin main
+```
+
+若当前不在 `main`，将 `main` 换成实际分支名。
+
+## 小结
+
+- **拉最新官方** → `fetch upstream` + `merge upstream/main`
+- **上传个人存档** → `push origin`（对应 fork `hermes-agent-byzjy`）
