@@ -935,6 +935,7 @@ class PluginManager:
             if yaml is None:
                 logger.warning("PyYAML not installed – cannot load %s", manifest_file)
                 return None
+            # 显式 UTF-8：中文 Windows 默认 locale 为 GBK，否则会误用 GBK 解码 UTF-8 清单
             data = yaml.safe_load(manifest_file.read_text(encoding="utf-8")) or {}
 
             name = data.get("name", plugin_dir.name)
@@ -961,7 +962,9 @@ class PluginManager:
                 init_file = plugin_dir / "__init__.py"
                 if init_file.exists():
                     try:
-                        source_text = init_file.read_text(errors="replace")[:8192]
+                        source_text = init_file.read_text(
+                            encoding="utf-8", errors="replace"
+                        )[:8192]
                         if (
                             "register_memory_provider" in source_text
                             or "MemoryProvider" in source_text

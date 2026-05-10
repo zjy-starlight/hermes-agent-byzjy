@@ -9982,8 +9982,8 @@ class GatewayRunner:
         """Handle /verbose command — cycle tool progress display mode.
 
         Gated by ``display.tool_progress_command`` in config.yaml (default off).
-        When enabled, cycles the tool progress mode through off → new → all →
-        verbose → off for the *current platform*.  The setting is saved to
+        When enabled, cycles the tool progress mode through off → new → minimal →
+        all → verbose → off for the *current platform*.  The setting is saved to
         ``display.platforms.<platform>.tool_progress`` so each channel can
         have its own verbosity level independently.
         """
@@ -10009,10 +10009,11 @@ class GatewayRunner:
             )
 
         # --- cycle mode (per-platform) ----------------------------------------
-        cycle = ["off", "new", "all", "verbose"]
+        cycle = ["off", "new", "minimal", "all", "verbose"]
         descriptions = {
             "off": "⚙️ Tool progress: **OFF** — no tool activity shown.",
             "new": "⚙️ Tool progress: **NEW** — shown when tool changes (preview length: `display.tool_preview_length`, default 40).",
+            "minimal": "⚙️ Tool progress: **MINIMAL** — tool name only (no query/path previews).",
             "all": "⚙️ Tool progress: **ALL** — every tool call shown (preview length: `display.tool_preview_length`, default 40).",
             "verbose": "⚙️ Tool progress: **VERBOSE** — every tool call with full arguments.",
         }
@@ -13834,6 +13835,18 @@ class GatewayRunner:
                     msg = f"{emoji} {tool_name}: \"{preview}\""
                 else:
                     msg = f"{emoji} {tool_name}..."
+                progress_queue.put(msg)
+                return
+
+            # Minimal: emoji + tool name only (no argument previews)
+            if progress_mode == "minimal":
+                msg = f"{emoji} {tool_name}"
+                if msg == last_progress_msg[0]:
+                    repeat_count[0] += 1
+                    progress_queue.put(("__dedup__", msg, repeat_count[0]))
+                    return
+                last_progress_msg[0] = msg
+                repeat_count[0] = 0
                 progress_queue.put(msg)
                 return
             

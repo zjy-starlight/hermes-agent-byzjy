@@ -763,6 +763,33 @@ platform_toolsets:
 #     env:
 #       GITHUB_PERSONAL_ACCESS_TOKEN: "ghp_..."
 #
+# --- Excel / spreadsheet MCP (pick ONE server name, e.g. "excel") ---
+# Tools register as mcp_<server_name>_<tool_name> (see docs/user-guide/features/mcp.md).
+#
+# Option A — excel-mcp-server (Python, no Microsoft Excel required; stdio uses paths per tool call):
+#   Requires: uv installed (https://docs.astral.sh/uv/). First run downloads the package.
+#   excel:
+#     command: uvx
+#     args: ["excel-mcp-server", "stdio"]
+#     timeout: 180
+#
+# Option B — @negokaz/excel-mcp-server (Node 20+; read/write xlsx xlsm xltx xltm; Windows live-edit extras):
+#   Non-Windows:
+#   excel:
+#     command: npx
+#     args: ["--yes", "@negokaz/excel-mcp-server"]
+#     env:
+#       EXCEL_MCP_PAGING_CELLS_LIMIT: "4000"
+#   Windows (npx spawn — use cmd /c as upstream recommends):
+#   excel:
+#     command: cmd
+#     args: ["/c", "npx", "--yes", "@negokaz/excel-mcp-server"]
+#     env:
+#       EXCEL_MCP_PAGING_CELLS_LIMIT: "4000"
+#
+# After adding mcp_servers, ensure the platform is not using the "no_mcp" toolset sentinel;
+# configured servers are included in the tool list by default (hermes_cli/tools_config.py).
+#
 # Sampling (server-initiated LLM requests) — enabled by default.
 # Per-server config under the 'sampling' key:
 #   analysis:
@@ -877,6 +904,7 @@ display:
   # Tool progress display level (CLI and gateway)
   #   off:     Silent — no tool activity shown, just the final response
   #   new:     Show a tool indicator only when the tool changes (skip repeats)
+  #   minimal: Every tool call — tool name only (no query/path/argument previews)
   #   all:     Show every tool call with a short preview (default)
   #   verbose: Full args, results, and debug logs (same as /verbose)
   # Toggle at runtime with /verbose in the CLI

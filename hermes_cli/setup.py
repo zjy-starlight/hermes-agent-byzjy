@@ -1726,12 +1726,13 @@ def setup_agent_settings(config: dict):
     print_info("Controls how much tool activity is shown (CLI and messaging).")
     print_info("  off     — Silent, just the final response")
     print_info("  new     — Show tool name only when it changes (less noise)")
+    print_info("  minimal — Every tool call, name only (no argument previews)")
     print_info("  all     — Show every tool call with a short preview")
     print_info("  verbose — Full args, results, and debug logs")
 
     current_mode = cfg_get(config, "display", "tool_progress", default="all")
     mode = prompt("Tool progress mode", current_mode)
-    if mode.lower() in ("off", "new", "all", "verbose"):
+    if mode.lower() in ("off", "new", "minimal", "all", "verbose"):
         if "display" not in config:
             config["display"] = {}
         config["display"]["tool_progress"] = mode.lower()

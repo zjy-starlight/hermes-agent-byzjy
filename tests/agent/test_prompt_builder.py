@@ -1144,8 +1144,16 @@ class TestToolUseEnforcementGuidance:
     def test_enforcement_models_includes_grok(self):
         assert "grok" in TOOL_USE_ENFORCEMENT_MODELS
 
+    def test_enforcement_models_includes_qwen(self):
+        assert "qwen" in TOOL_USE_ENFORCEMENT_MODELS
+
     def test_enforcement_models_is_tuple(self):
         assert isinstance(TOOL_USE_ENFORCEMENT_MODELS, tuple)
+
+    def test_guidance_forbids_simulated_web_search(self):
+        text = TOOL_USE_ENFORCEMENT_GUIDANCE.lower()
+        assert "never simulate web search" in text
+        assert "web tools are unavailable" in text
 
 
 class TestOpenAIModelExecutionGuidance:

@@ -2271,7 +2271,7 @@ class HermesCLI:
         self.console = Console()
         self.config = CLI_CONFIG
         self.compact = compact if compact is not None else CLI_CONFIG["display"].get("compact", False)
-        # tool_progress: "off", "new", "all", "verbose" (from config.yaml display section)
+        # tool_progress: "off", "new", "minimal", "all", "verbose" (config display)
         # YAML 1.1 parses bare `off` as boolean False — normalise to string.
         _raw_tp = CLI_CONFIG["display"].get("tool_progress", "all")
         self.tool_progress_mode = "off" if _raw_tp is False else str(_raw_tp)
@@ -7851,12 +7851,12 @@ class HermesCLI:
             _cprint("  Failed to save runtime_footer setting to config.yaml")
 
     def _toggle_verbose(self):
-        """Cycle tool progress mode: off → new → all → verbose → off."""
-        cycle = ["off", "new", "all", "verbose"]
+        """Cycle tool progress mode: off → new → minimal → all → verbose → off."""
+        cycle = ["off", "new", "minimal", "all", "verbose"]
         try:
             idx = cycle.index(self.tool_progress_mode)
         except ValueError:
-            idx = 2  # default to "all"
+            idx = 3  # default to "all"
         self.tool_progress_mode = cycle[(idx + 1) % len(cycle)]
         self.verbose = self.tool_progress_mode == "verbose"
 
@@ -7873,6 +7873,7 @@ class HermesCLI:
         labels = {
             "off": f"{_Colors.DIM}Tool progress: OFF{_Colors.RESET} — silent mode, just the final response.",
             "new": f"{_Colors.YELLOW}Tool progress: NEW{_Colors.RESET} — show each new tool (skip repeats).",
+            "minimal": f"{_Colors.CYAN}Tool progress: MINIMAL{_Colors.RESET} — tool name only (no argument previews).",
             "all": f"{_Colors.GREEN}Tool progress: ALL{_Colors.RESET} — show every tool call.",
             "verbose": f"{_Colors.BOLD}{_Colors.GREEN}Tool progress: VERBOSE{_Colors.RESET} — full args, results, think blocks, and debug logs.",
         }
@@ -8699,14 +8700,14 @@ class HermesCLI:
         can show a live elapsed timer (the TUI poll loop already invalidates
         every ~0.15s, so the counter updates automatically).
 
-        When tool_progress_mode is "all" or "new", also prints a persistent
-        stacked line to scrollback on tool.completed so users can see the
-        full history of tool calls (not just the current one in the spinner).
+        When tool_progress_mode is "all", "new", or "minimal", also prints a
+        persistent stacked line to scrollback on tool.completed so users can see
+        tool usage (minimal = name only; all/new = formatted previews).
         """
         if event_type == "tool.completed":
             self._tool_start_time = 0.0
-            # Print stacked scrollback line for "all" / "new" modes
-            if function_name and self.tool_progress_mode in ("all", "new"):
+            # Print stacked scrollback line for "all" / "new" / "minimal"
+            if function_name and self.tool_progress_mode in ("all", "new", "minimal"):
                 duration = kwargs.get("duration", 0.0)
                 is_error = kwargs.get("is_error", False)
                 # Pop stored args from tool.started for this function
@@ -8720,8 +8721,12 @@ class HermesCLI:
                     return
                 self._last_scrollback_tool = function_name
                 try:
-                    from agent.display import get_cute_tool_message
-                    line = get_cute_tool_message(function_name, stored_args, duration)
+                    if self.tool_progress_mode == "minimal":
+                        from agent.display import format_tool_progress_minimal_line
+                        line = format_tool_progress_minimal_line(function_name)
+                    else:
+                        from agent.display import get_cute_tool_message
+                        line = get_cute_tool_message(function_name, stored_args, duration)
                     if is_error:
                         line = f"{line} [error]"
                     _cprint(f"  {line}")
@@ -8759,11 +8764,14 @@ class HermesCLI:
         if function_name and not function_name.startswith("_"):
             from agent.display import get_tool_emoji
             emoji = get_tool_emoji(function_name)
-            label = preview or function_name
-            from agent.display import get_tool_preview_max_len
-            _pl = get_tool_preview_max_len()
-            if _pl > 0 and len(label) > _pl:
-                label = label[:_pl - 3] + "..."
+            if self.tool_progress_mode == "minimal":
+                label = function_name
+            else:
+                label = preview or function_name
+                from agent.display import get_tool_preview_max_len
+                _pl = get_tool_preview_max_len()
+                if _pl > 0 and len(label) > _pl:
+                    label = label[:_pl - 3] + "..."
             self._spinner_text = f"{emoji} {label}"
             self._tool_start_time = time.monotonic()
             # Store args for stacked scrollback line on completion

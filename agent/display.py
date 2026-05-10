@@ -158,6 +158,16 @@ def get_tool_emoji(tool_name: str, default: str = "⚡") -> str:
     return default
 
 
+def format_tool_progress_minimal_line(tool_name: str) -> str:
+    """单行工具标记：皮肤前缀 + emoji + 工具名（不含参数、查询词等详情）。"""
+    emoji = get_tool_emoji(tool_name)
+    skin_prefix = get_skin_tool_prefix()
+    line = f"┊ {emoji} {tool_name}"
+    if skin_prefix != "┊":
+        line = line.replace("┊", skin_prefix, 1)
+    return line
+
+
 # =========================================================================
 # Tool preview (one-line summary of a tool call's primary argument)
 # =========================================================================

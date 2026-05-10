@@ -884,7 +884,7 @@ def _load_show_reasoning() -> bool:
 
 def _load_tool_progress_mode() -> str:
     env = os.environ.get("HERMES_TUI_TOOL_PROGRESS", "").strip().lower()
-    if env in {"off", "new", "all", "verbose"}:
+    if env in {"off", "new", "minimal", "all", "verbose"}:
         return env
     raw = (_load_cfg().get("display") or {}).get("tool_progress", "all")
     if raw is False:
@@ -892,7 +892,7 @@ def _load_tool_progress_mode() -> str:
     if raw is True:
         return "all"
     mode = str(raw or "all").strip().lower()
-    return mode if mode in {"off", "new", "all", "verbose"} else "all"
+    return mode if mode in {"off", "new", "minimal", "all", "verbose"} else "all"
 
 
 def _load_enabled_toolsets() -> list[str] | None:
@@ -1558,7 +1558,12 @@ def _on_tool_progress(
     if not _tool_progress_enabled(sid):
         return
     if event_type == "tool.started" and name:
-        _emit("tool.progress", sid, {"name": name, "preview": preview or ""})
+        _prev = (
+            ""
+            if _session_tool_progress_mode(sid) == "minimal"
+            else (preview or "")
+        )
+        _emit("tool.progress", sid, {"name": name, "preview": _prev})
         return
     if event_type == "reasoning.available" and preview:
         _emit("reasoning.available", sid, {"text": str(preview)})
@@ -3724,7 +3729,7 @@ def _(rid, params: dict) -> dict:
         return _ok(rid, {"key": key, "value": raw})
 
     if key == "verbose":
-        cycle = ["off", "new", "all", "verbose"]
+        cycle = ["off", "new", "minimal", "all", "verbose"]
         cur = (
             session.get("tool_progress_mode", _load_tool_progress_mode())
             if session
